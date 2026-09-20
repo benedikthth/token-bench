@@ -9,7 +9,7 @@ The agent wrote the program, ran the visible tests and stopped when they
 passed. Hidden tests then judged the result.
 
 The data covers 838 cells. A cell is one model, one language and one
-problem. The runs took place in September 2026.
+problem.
 
 ## Layout
 
