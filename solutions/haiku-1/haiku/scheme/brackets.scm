@@ -1,0 +1,41 @@
+(use-modules (ice-9 rdelim))
+
+(define (balanced? line)
+  (define (check-brackets chars stack)
+    (cond
+      ((null? chars)
+       (null? stack))
+      (else
+       (let ((ch (car chars)))
+         (cond
+           ((char=? ch #\()
+            (check-brackets (cdr chars) (cons ch stack)))
+           ((char=? ch #\[)
+            (check-brackets (cdr chars) (cons ch stack)))
+           ((char=? ch #\{)
+            (check-brackets (cdr chars) (cons ch stack)))
+           ((char=? ch #\))
+            (and (pair? stack)
+                 (char=? (car stack) #\()
+                 (check-brackets (cdr chars) (cdr stack))))
+           ((char=? ch #\])
+            (and (pair? stack)
+                 (char=? (car stack) #\[)
+                 (check-brackets (cdr chars) (cdr stack))))
+           ((char=? ch #\})
+            (and (pair? stack)
+                 (char=? (car stack) #\{)
+                 (check-brackets (cdr chars) (cdr stack))))
+           (else
+            (check-brackets (cdr chars) stack)))))))
+  (check-brackets (string->list line) '()))
+
+(let loop ()
+  (let ((line (read-line)))
+    (if (not (eof-object? line))
+        (begin
+          (if (balanced? line)
+              (display "yes")
+              (display "no"))
+          (newline)
+          (loop)))))

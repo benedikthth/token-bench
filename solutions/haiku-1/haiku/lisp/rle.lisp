@@ -1,0 +1,12 @@
+(let ((line (read-line)))
+  (let ((i 0)
+        (len (length line)))
+    (loop while (< i len)
+          do
+          (let ((current-char (char line i))
+                (count 0))
+            (loop while (and (< i len) (char= (char line i) current-char))
+                  do (incf count) (incf i))
+            (format t "~a~d" current-char count))))
+  (when (> (length line) 0)
+    (terpri)))

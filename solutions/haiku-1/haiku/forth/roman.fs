@@ -1,0 +1,26 @@
+: to-roman ( n -- )
+    BEGIN DUP 1000 >= WHILE 1000 - ." M" REPEAT
+    BEGIN DUP 900 >= WHILE 900 - ." CM" REPEAT
+    BEGIN DUP 500 >= WHILE 500 - ." D" REPEAT
+    BEGIN DUP 400 >= WHILE 400 - ." CD" REPEAT
+    BEGIN DUP 100 >= WHILE 100 - ." C" REPEAT
+    BEGIN DUP 90 >= WHILE 90 - ." XC" REPEAT
+    BEGIN DUP 50 >= WHILE 50 - ." L" REPEAT
+    BEGIN DUP 40 >= WHILE 40 - ." XL" REPEAT
+    BEGIN DUP 10 >= WHILE 10 - ." X" REPEAT
+    BEGIN DUP 9 >= WHILE 9 - ." IX" REPEAT
+    BEGIN DUP 5 >= WHILE 5 - ." V" REPEAT
+    BEGIN DUP 4 >= WHILE 4 - ." IV" REPEAT
+    BEGIN DUP 1 >= WHILE 1 - ." I" REPEAT
+    DROP ;
+
+: main
+    BEGIN
+        PAD 80 ACCEPT
+        DUP
+    WHILE
+        PAD SWAP EVALUATE to-roman DROP CR
+    REPEAT
+    DROP ;
+
+main

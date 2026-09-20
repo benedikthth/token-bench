@@ -1,0 +1,39 @@
+#!/bin/bash
+# Usage: run <lang> <file>
+# Runs the program in /work with stdin passed through.
+# Compiled languages build into /work/.build when the source is newer.
+# The whole run is wrapped in a hard timeout so a program that loops
+# forever cannot leave a container behind. RUN_TIMEOUT is in seconds.
+if [ -z "$UNDER_TIMEOUT" ]; then
+  export UNDER_TIMEOUT=1
+  exec timeout -s KILL "${RUN_TIMEOUT:-120}" "$0" "$@"
+fi
+set -e
+lang="$1"; file="$2"
+cd /work
+mkdir -p .build
+case "$lang" in
+  python)     exec python3 "$file" ;;
+  javascript) exec node "$file" ;;
+  typescript) exec bun run "$file" ;;
+  go)         [ .build/go -nt "$file" ] || go build -o .build/go "$file"; exec .build/go ;;
+  rust)       [ .build/rust -nt "$file" ] || rustc -O -o .build/rust "$file"; exec .build/rust ;;
+  java)       [ .build/Main.class -nt "$file" ] || javac -d .build "$file"; exec java -cp .build Main ;;
+  c)          [ .build/c -nt "$file" ] || gcc -O2 -o .build/c "$file" -lm; exec .build/c ;;
+  haskell)    [ .build/hs -nt "$file" ] || ghc -O -outputdir .build -o .build/hs "$file" >/dev/null; exec .build/hs ;;
+  ruby)       exec ruby "$file" ;;
+  perl)       exec perl "$file" ;;
+  lisp)       exec sbcl --script "$file" ;;
+  scheme)     exec guile --no-auto-compile "$file" ;;
+  prolog)     exec swipl -q -g main -t halt "$file" ;;
+  apl)        exec apl --script -f "$file" ;;
+  bqn)        exec bqn "$file" ;;
+  k)          exec k "$file" ;;
+  forth)      exec gforth "$file" -e bye ;;
+  zig)        export ZIG_GLOBAL_CACHE_DIR=/work/.build/zig-cache ZIG_LOCAL_CACHE_DIR=/work/.build/zig-cache
+              [ .build/zig -nt "$file" ] || zig build-exe "$file" -O ReleaseFast -femit-bin=.build/zig; exec .build/zig ;;
+  gleam)      # a single-file program runs as module "solution" inside the prebuilt project, at the path it
+              # was built at, so only that module compiles. The container's writable layer takes the copy.
+              cp "$file" /opt/gleamproj/src/solution.gleam; cd /opt/gleamproj; exec gleam run -m solution ;;
+  *)          echo "unknown language: $lang" >&2; exit 2 ;;
+esac

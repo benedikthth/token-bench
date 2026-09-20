@@ -1,0 +1,17 @@
+(use-modules (ice-9 rdelim))
+
+(define line (read-line))
+(define s (if (eof-object? line) "" (string-trim-both line)))
+(define n (string-length s))
+
+(let loop ((i 0))
+  (when (< i n)
+    (let* ((c (string-ref s i))
+           (j (let run ((j i))
+                (if (and (< j n) (char=? (string-ref s j) c))
+                    (run (+ j 1))
+                    j))))
+      (display c)
+      (display (- j i))
+      (loop j))))
+(newline)

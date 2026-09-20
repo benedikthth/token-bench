@@ -1,0 +1,25 @@
+(use-modules (ice-9 rdelim))
+
+(define (strip-cr str)
+  (let ((n (string-length str)))
+    (if (and (> n 0) (char=? (string-ref str (- n 1)) #\return))
+        (substring str 0 (- n 1))
+        str)))
+
+(define (rle str)
+  (let ((n (string-length str)))
+    (let loop ((i 0) (acc '()))
+      (if (>= i n)
+          (apply string-append (reverse acc))
+          (let ((c (string-ref str i)))
+            (let count ((j i))
+              (if (and (< j n) (char=? (string-ref str j) c))
+                  (count (+ j 1))
+                  (loop j (cons (string-append (string c) (number->string (- j i))) acc)))))))))
+
+(let ((line (read-line)))
+  (if (eof-object? line)
+      (newline)
+      (begin
+        (display (rle (strip-cr line)))
+        (newline))))

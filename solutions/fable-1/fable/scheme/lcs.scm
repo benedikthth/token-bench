@@ -1,0 +1,41 @@
+(use-modules (ice-9 rdelim))
+
+(define (read-line-or-empty)
+  (let ((l (read-line)))
+    (if (eof-object? l) "" l)))
+
+(define (strip-cr s)
+  (let ((n (string-length s)))
+    (if (and (> n 0) (char=? (string-ref s (- n 1)) #\return))
+        (substring s 0 (- n 1))
+        s)))
+
+(define (lcs a b)
+  (let* ((n (string-length a))
+         (m (string-length b))
+         (prev (make-vector (+ m 1) 0))
+         (cur (make-vector (+ m 1) 0)))
+    (let loop-i ((i 1))
+      (if (> i n)
+          (vector-ref prev m)
+          (begin
+            (vector-set! cur 0 0)
+            (let ((ca (string-ref a (- i 1))))
+              (let loop-j ((j 1))
+                (if (<= j m)
+                    (begin
+                      (if (char=? ca (string-ref b (- j 1)))
+                          (vector-set! cur j (+ 1 (vector-ref prev (- j 1))))
+                          (vector-set! cur j (max (vector-ref prev j)
+                                                  (vector-ref cur (- j 1)))))
+                      (loop-j (+ j 1))))))
+            ;; swap rows
+            (let ((tmp prev))
+              (set! prev cur)
+              (set! cur tmp))
+            (loop-i (+ i 1)))))))
+
+(let* ((a (strip-cr (read-line-or-empty)))
+       (b (strip-cr (read-line-or-empty))))
+  (display (lcs a b))
+  (newline))

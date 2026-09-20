@@ -1,0 +1,2 @@
+input ← •GetLine ""
+•Out input

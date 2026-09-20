@@ -1,0 +1,9 @@
+l:0:"/dev/stdin"
+s:*l
+n:#s
+d:~(1_s)=(-1_s)
+rs:0,1+&d
+lens:(1_rs,n)-rs
+chs:s@rs
+out:$[n=0;"";,/{x,$y}'[chs;lens]]
+`0:,out

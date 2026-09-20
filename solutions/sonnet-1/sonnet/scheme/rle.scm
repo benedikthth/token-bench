@@ -1,0 +1,21 @@
+(use-modules (ice-9 rdelim))
+
+(define (rle-line str)
+  (let ((len (string-length str)))
+    (let loop ((i 0) (out '()))
+      (if (>= i len)
+          (apply string-append (reverse out))
+          (let ((c (string-ref str i)))
+            (let count ((j (+ i 1)) (n 1))
+              (if (and (< j len) (char=? (string-ref str j) c))
+                  (count (+ j 1) (+ n 1))
+                  (loop j (cons (string-append (string c) (number->string n)) out)))))))))
+
+(define (main)
+  (let ((line (read-line)))
+    (if (eof-object? line)
+        (display "")
+        (display (rle-line line))))
+  (newline))
+
+(main)

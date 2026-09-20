@@ -1,0 +1,121 @@
+(use-modules (ice-9 rdelim))
+
+;; Tokenize an expression string into a list of tokens
+(define (tokenize expr)
+  (define (skip-whitespace str i)
+    (if (< i (string-length str))
+        (if (char-whitespace? (string-ref str i))
+            (skip-whitespace str (+ i 1))
+            i)
+        i))
+
+  (define (read-number str i)
+    (define (helper i)
+      (if (< i (string-length str))
+          (let ((c (string-ref str i)))
+            (if (char-numeric? c)
+                (helper (+ i 1))
+                i))
+          i))
+    (let ((end (helper i)))
+      (cons (string->number (substring str i end)) end)))
+
+  (define (iter str i tokens)
+    (let ((i (skip-whitespace str i)))
+      (if (>= i (string-length str))
+          (reverse tokens)
+          (let ((c (string-ref str i)))
+            (cond
+              ((char-numeric? c)
+               (let ((num-end (read-number str i)))
+                 (iter str (cdr num-end) (cons (car num-end) tokens))))
+              ((char=? c #\()
+               (iter str (+ i 1) (cons 'lparen tokens)))
+              ((char=? c #\))
+               (iter str (+ i 1) (cons 'rparen tokens)))
+              ((char=? c #\+)
+               (iter str (+ i 1) (cons '+ tokens)))
+              ((char=? c #\-)
+               (iter str (+ i 1) (cons '- tokens)))
+              ((char=? c #\*)
+               (iter str (+ i 1) (cons '* tokens)))
+              ((char=? c #\/)
+               (iter str (+ i 1) (cons '/ tokens)))
+              (else
+               (iter str (+ i 1) tokens)))))))
+
+  (iter expr 0 '()))
+
+;; Parser with precedence handling
+(define (parse tokens)
+  (define pos (list 0))
+
+  (define (current)
+    (list-ref tokens (car pos)))
+
+  (define (advance)
+    (set-car! pos (+ (car pos) 1)))
+
+  (define (peek-ahead)
+    (if (< (+ (car pos) 1) (length tokens))
+        (list-ref tokens (+ (car pos) 1))
+        #f))
+
+  (define (parse-additive)
+    (define (loop left)
+      (if (and (< (car pos) (length tokens))
+               (memq (current) '(+ -)))
+          (let ((op (current)))
+            (advance)
+            (let ((right (parse-multiplicative)))
+              (let ((new-left (if (eq? op '+)
+                                  (+ left right)
+                                  (- left right))))
+                (loop new-left))))
+          left))
+    (loop (parse-multiplicative)))
+
+  (define (parse-multiplicative)
+    (define (loop left)
+      (if (and (< (car pos) (length tokens))
+               (memq (current) '(* /)))
+          (let ((op (current)))
+            (advance)
+            (let ((right (parse-primary)))
+              (let ((new-left (if (eq? op '*)
+                                  (* left right)
+                                  ;; Integer division truncating toward zero
+                                  (truncate (/ left right)))))
+                (loop new-left))))
+          left))
+    (loop (parse-primary)))
+
+  (define (parse-primary)
+    (let ((token (current)))
+      (cond
+        ((number? token)
+         (advance)
+         token)
+        ((eq? token 'lparen)
+         (advance)
+         (let ((result (parse-additive)))
+           (if (eq? (current) 'rparen)
+               (advance)
+               (error "Missing closing parenthesis"))
+           result))
+        (else
+         (error "Unexpected token: " token)))))
+
+  (parse-additive))
+
+;; Main program
+(define (main)
+  (let ((line (read-line)))
+    (if (not (eof-object? line))
+        (begin
+          (let ((result (parse (tokenize line))))
+            (display result)
+            (newline))
+          (main)))))
+
+(main)

@@ -1,0 +1,13 @@
+(let* ((line (or (read-line *standard-input* nil) ""))
+       (s (string-right-trim '(#\Return #\Space #\Tab) line))
+       (n (length s))
+       (out (make-string-output-stream)))
+  (let ((i 0))
+    (loop while (< i n) do
+      (let ((c (char s i))
+            (j i))
+        (loop while (and (< j n) (char= (char s j) c)) do (incf j))
+        (format out "~C~D" c (- j i))
+        (setf i j))))
+  (write-string (get-output-stream-string out))
+  (terpri))

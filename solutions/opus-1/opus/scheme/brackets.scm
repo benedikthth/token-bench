@@ -1,0 +1,22 @@
+(use-modules (ice-9 rdelim))
+
+(define (balanced? line)
+  (let loop ((chars (string->list line)) (stack '()))
+    (if (null? chars)
+        (null? stack)
+        (let ((c (car chars)))
+          (case c
+            ((#\( #\[ #\{) (loop (cdr chars) (cons c stack)))
+            ((#\) #\] #\})
+             (let ((open (cdr (assv c '((#\) . #\() (#\] . #\[) (#\} . #\{))))))
+               (and (pair? stack)
+                    (char=? (car stack) open)
+                    (loop (cdr chars) (cdr stack)))))
+            (else (loop (cdr chars) stack)))))))
+
+(let loop ()
+  (let ((line (read-line)))
+    (unless (eof-object? line)
+      (display (if (balanced? line) "yes" "no"))
+      (newline)
+      (loop))))

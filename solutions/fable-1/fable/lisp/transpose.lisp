@@ -1,0 +1,32 @@
+(defun read-ints-from-line (line)
+  (let ((result '())
+        (start 0)
+        (len (length line)))
+    (loop
+      (loop while (and (< start len) (char= (char line start) #\Space))
+            do (incf start))
+      (when (>= start len) (return))
+      (let ((end (or (position #\Space line :start start) len)))
+        (push (parse-integer line :start start :end end) result)
+        (setf start end)))
+    (nreverse result)))
+
+(defun main ()
+  (let* ((header (read-ints-from-line (read-line *standard-input* nil "")))
+         (r (first header))
+         (c (second header))
+         (m (make-array (list r c) :initial-element 0)))
+    (dotimes (i r)
+      (let ((row (read-ints-from-line (read-line *standard-input* nil ""))))
+        (loop for j from 0 below c
+              for v in row
+              do (setf (aref m i j) v))))
+    (let ((out (make-string-output-stream)))
+      (dotimes (j c)
+        (dotimes (i r)
+          (when (> i 0) (write-char #\Space out))
+          (format out "~D" (aref m i j)))
+        (write-char #\Newline out))
+      (write-string (get-output-stream-string out) *standard-output*))))
+
+(main)

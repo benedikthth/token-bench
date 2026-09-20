@@ -1,0 +1,32 @@
+(use-modules (ice-9 rdelim))
+
+(define (read-line-safe)
+  (let ((line (read-line)))
+    (if (eof-object? line) "" line)))
+
+(define (lcs-length a b)
+  (let* ((n (string-length a))
+         (m (string-length b))
+         (prev (make-vector (+ m 1) 0))
+         (curr (make-vector (+ m 1) 0)))
+    (let loop-i ((i 1))
+      (if (> i n)
+          (vector-ref prev m)
+          (begin
+            (let loop-j ((j 1))
+              (if (<= j m)
+                  (begin
+                    (if (char=? (string-ref a (- i 1)) (string-ref b (- j 1)))
+                        (vector-set! curr j (+ 1 (vector-ref prev (- j 1))))
+                        (vector-set! curr j (max (vector-ref prev j) (vector-ref curr (- j 1)))))
+                    (loop-j (+ j 1)))))
+            (let ((tmp prev))
+              (set! prev curr)
+              (set! curr tmp))
+            (vector-set! curr 0 0)
+            (loop-i (+ i 1)))))))
+
+(let* ((line1 (read-line-safe))
+       (line2 (read-line-safe)))
+  (display (lcs-length line1 line2))
+  (newline))

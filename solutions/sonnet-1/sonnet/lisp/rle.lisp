@@ -1,0 +1,17 @@
+(let ((line (read-line *standard-input* nil "")))
+  (let ((len (length line))
+        (out (make-string-output-stream)))
+    (when (> len 0)
+      (let ((current (char line 0))
+            (count 1))
+        (loop for i from 1 below len
+              for ch = (char line i)
+              do (if (char= ch current)
+                     (incf count)
+                     (progn
+                       (format out "~a~a" current count)
+                       (setf current ch)
+                       (setf count 1))))
+        (format out "~a~a" current count)))
+    (write-string (get-output-stream-string out))
+    (fresh-line)))

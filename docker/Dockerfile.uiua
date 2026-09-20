@@ -1,0 +1,13 @@
+# Uiua needs glibc 2.39+, newer than the main image's Debian bookworm.
+# Build: docker build -t token-bench-uiua -f docker/Dockerfile.uiua docker
+FROM debian:trixie-slim
+ENV DEBIAN_FRONTEND=noninteractive HOME=/tmp
+RUN echo 'Acquire::Retries "10";' > /etc/apt/apt.conf.d/80retries \
+    && apt-get update && apt-get install -y --no-install-recommends ca-certificates curl unzip coreutils \
+    && rm -rf /var/lib/apt/lists/*
+RUN curl -fsSL --retry 5 https://github.com/uiua-lang/uiua/releases/download/0.19.1/uiua-bin-x86_64-unknown-linux-gnu-no-audio.zip -o /tmp/uiua.zip \
+    && unzip -o /tmp/uiua.zip -d /tmp/uiua && find /tmp/uiua -type f -name uiua -exec install -m 755 {} /usr/local/bin/uiua \; \
+    && rm -rf /tmp/uiua /tmp/uiua.zip
+# The bench calls: timeout -s KILL <n> uiua-run /work/solution.ua
+RUN printf '#!/bin/sh\nexec uiua run "$1"\n' > /usr/local/bin/uiua-run && chmod +x /usr/local/bin/uiua-run
+WORKDIR /work

@@ -1,0 +1,80 @@
+(define (read-int) (read))
+
+(define n (read-int))
+(define m (read-int))
+(define adj (make-vector (max n 1) '()))
+
+(do ((i 0 (+ i 1))) ((= i m))
+  (let* ((u (read-int)) (v (read-int)) (w (read-int)))
+    (vector-set! adj u (cons (cons v w) (vector-ref adj u)))
+    (vector-set! adj v (cons (cons u w) (vector-ref adj v)))))
+
+(define s (read-int))
+(define t (read-int))
+
+;; binary min-heap of (dist . node) pairs
+(define heap (make-vector 16 #f))
+(define size 0)
+
+(define (heap-swap! i j)
+  (let ((x (vector-ref heap i)))
+    (vector-set! heap i (vector-ref heap j))
+    (vector-set! heap j x)))
+
+(define (key i) (car (vector-ref heap i)))
+
+(define (heap-push! item)
+  (when (= size (vector-length heap))
+    (let ((nv (make-vector (* 2 size) #f)))
+      (vector-move-left! heap 0 size nv 0)
+      (set! heap nv)))
+  (vector-set! heap size item)
+  (set! size (+ size 1))
+  (let loop ((i (- size 1)))
+    (when (> i 0)
+      (let ((p (quotient (- i 1) 2)))
+        (when (< (key i) (key p))
+          (heap-swap! i p)
+          (loop p))))))
+
+(define (heap-pop!)
+  (let ((top (vector-ref heap 0)))
+    (set! size (- size 1))
+    (vector-set! heap 0 (vector-ref heap size))
+    (vector-set! heap size #f)
+    (let loop ((i 0))
+      (let* ((l (+ (* 2 i) 1))
+             (r (+ l 1))
+             (smallest i)
+             (smallest (if (and (< l size) (< (key l) (key smallest))) l smallest))
+             (smallest (if (and (< r size) (< (key r) (key smallest))) r smallest)))
+        (unless (= smallest i)
+          (heap-swap! i smallest)
+          (loop smallest))))
+    top))
+
+(define dist (make-vector (max n 1) #f))
+
+(define (dijkstra)
+  (vector-set! dist s 0)
+  (heap-push! (cons 0 s))
+  (let loop ()
+    (if (= size 0)
+        (vector-ref dist t)
+        (let* ((item (heap-pop!)) (d (car item)) (u (cdr item)))
+          (cond
+           ((= u t) d)
+           ((> d (vector-ref dist u)) (loop))
+           (else
+            (for-each
+             (lambda (e)
+               (let ((v (car e)) (nd (+ d (cdr e))))
+                 (when (or (not (vector-ref dist v)) (< nd (vector-ref dist v)))
+                   (vector-set! dist v nd)
+                   (heap-push! (cons nd v)))))
+             (vector-ref adj u))
+            (loop)))))))
+
+(let ((r (if (= s t) 0 (dijkstra))))
+  (display (if r r -1))
+  (newline))
