@@ -32,13 +32,13 @@ problem. The runs took place in September 2026.
 | `problem` | the problem name |
 | `passed` | `True` when every hidden test passed |
 | `cases_passed`, `cases_total` | hidden test cases |
-| `input_tokens`, `output_tokens` | tokens billed for the session |
+| `input_tokens`, `output_tokens` | tokens billed for the main agent loop |
 | `cache_read_tokens`, `cache_create_tokens` | prompt cache tokens |
 | `thinking_tokens` | the part of the output tokens spent on thinking |
 | `total_tokens` | the four token columns added together |
 | `num_turns` | agent turns. The cap was 40, and a capped cell reports 41 |
 | `duration_ms` | time the agent spent |
-| `cost_usd` | the cost the CLI reported, at list price |
+| `cost_usd` | the cost the CLI reported, at list price. It covers the whole session |
 | `solution_tokens_o200k`, `solution_tokens_cl100k` | size of the program, by tiktoken |
 | `solution_bytes` | size of the program in bytes |
 | `error` | empty when the cell ran to the end |
@@ -83,9 +83,24 @@ A test case had 120 seconds inside the container and 240 seconds outside it.
 - **The contaminated runs.** 34 cells sit under `run` values that start
   with `contaminated/`. An earlier solution stayed in the folder, so the
   agent could see it. Drop them unless you want to study that effect.
-- **A helper model.** The CLI uses a small model for side tasks. It
-  produced 0.19 percent of all output tokens. The token columns include it;
-  `model_id` names the model that did the work.
+- **A side call in every session.** The CLI makes one small Haiku call per
+  session, in all 808 sessions, whatever the main model is. It takes about
+  1180 input tokens and returns about 13 output tokens. The token columns
+  **exclude** it, because the CLI reports it outside the usage block.
+  `cost_usd` **includes** it, so the cost columns carry about 0.44 percent
+  more than the token columns account for.
+- **Three cells spawned a subagent.** The agent had no Task tool, but three
+  haiku cells spawned one anyway. Their subagent tokens sit outside the
+  usage block, so the token columns understate those three rows badly:
+
+  | Cell | Subagent | Output tokens missing | Cache reads missing |
+  | --- | --- | --- | --- |
+  | `gleam-1` haiku/gleam/lcs | general-purpose | 8,711 | 538,871 |
+  | `uiua-1` haiku/uiua/brackets | Explore | 21,967 | 1,344,958 |
+  | `uiua-1` haiku/uiua/calc | Explore | 2,927 | 54,587 |
+
+  `cost_usd` for those three rows does include the subagent. Drop the three
+  rows, or take their tokens as a floor.
 - **Three cells wrote nothing.** `sonnet`/`uiua` on `brackets`, `calc` and
   `primes` hit the turn cap with no file. They carry `error = no solution`
   and have no entry under `solutions/`.
