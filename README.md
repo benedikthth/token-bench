@@ -40,11 +40,54 @@ problem. The runs took place in September 2026.
 | `duration_ms` | time the agent spent |
 | `cost_usd` | the cost the CLI reported, at list price. It covers the whole session |
 | `solution_tokens_o200k`, `solution_tokens_cl100k` | size of the program, by tiktoken |
-| `solution_bytes` | size of the program in bytes |
+| `solution_bytes` | size of the program in bytes. **Not characters.** See the warning below |
+| `solution_chars` | size of the program in characters |
+| `ct_haiku`, `ct_sonnet`, `ct_opus`, `ct_fable` | size of the program in each model's own tokens, from Anthropic's `count_tokens` endpoint. Empty for a cell that wrote no passing program |
+| `ct_own` | the count under the model that wrote the program |
 | `error` | empty when the cell ran to the end |
 | `wall_s` | wall clock for the cell, including the container |
 
 `turns.csv` and `transcripts.csv` join on `model`, `lang` and `problem`.
+
+### Warning: measure programs with `solution_chars`, not `solution_bytes`
+
+APL, BQN and Uiua write glyphs. One glyph takes several bytes in UTF-8, so
+`solution_bytes` runs 1.3 to 1.4 times above the character count for those
+three languages, and exactly equals it for the other seventeen. Divide
+`solution_bytes` by a token count and the three densest languages look
+about a third less dense than they are.
+
+### Warning: `solution_tokens_o200k` is not Claude's tokenizer
+
+`solution_tokens_o200k` and `solution_tokens_cl100k` come from tiktoken.
+They undercount Claude by about 31 percent on this code. Use the `ct_`
+columns for any ratio against the token bill, because the bill is in
+Claude's tokens. Sonnet 5, Opus 5 and Fable 5.1 share one tokenizer and
+give identical counts. Haiku 4.5 uses an older one that returns about
+16 percent fewer tokens for the same text.
+
+## Reproduce a published figure
+
+Select the 800 core cells first:
+
+    run does not start with "contaminated/" and does not end with "-forth"
+
+That subset holds 800 rows and 727 passing programs. The 34 contaminated
+cells and the 4 `-forth` re-runs sit outside it.
+
+Then:
+
+| To get | Use |
+| --- | --- |
+| turn counts per language | `num_turns` from `cells.csv`, not `turns.csv` |
+| program size against the token bill | a `ct_` column, never `solution_tokens_o200k` |
+| characters per token | `solution_chars` divided by `ct_opus` |
+| fresh tokens | `total_tokens` minus `cache_read_tokens` |
+
+`turns.csv` covers 791 of the 800 core cells. It misses the seven cells
+that ran again after a timeout and the cells that wrote no program, so its
+means for Forth, Gleam and Uiua sit below the `cells.csv` means. Use
+`cells.csv` for turn counts and `turns.csv` only for the tool-call split.
 
 ## How the runs worked
 
