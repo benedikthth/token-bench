@@ -83,6 +83,8 @@ Then:
 | program size against the token bill | a `ct_` column, never `solution_tokens_o200k` |
 | characters per token | `solution_chars` divided by `ct_opus` |
 | fresh tokens | `total_tokens` minus `cache_read_tokens` |
+| the floor per model | the smallest fresh-token run that model managed |
+| a figure that excludes "the esoterics" | drop `apl`, `bqn`, `k`, `uiua`, `forth`, `gleam` and `zig` |
 
 `turns.csv` covers 791 of the 800 core cells. It misses the seven cells
 that ran again after a timeout and the cells that wrote no program, so its
